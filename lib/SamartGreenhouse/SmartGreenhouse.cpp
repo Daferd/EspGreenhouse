@@ -1,7 +1,17 @@
 #include <SmartGreenhouse.h>
 
+#define CH1 25
+#define CH2 13
+#define CH3 12
+#define CH4 14
+#define CH5 27
+#define CH6 26
+#define CH7 2
+#define CH8 4
+
 SmartGreenhouse::SmartGreenhouse(/* args */)
 {
+    
 }
 
 SmartGreenhouse::~SmartGreenhouse()
@@ -19,7 +29,7 @@ void SmartGreenhouse::enableChannel(ChannelServer channel){
 }
 
 bool SmartGreenhouse::timerAction(Event eventAux){
-  bool action=false; 
+  bool enableAction=false; 
   bool listDays[]={false,false,false,false,false,false,false};
   
   listDays[0] = eventAux.sun;
@@ -33,42 +43,41 @@ bool SmartGreenhouse::timerAction(Event eventAux){
   if(listDays[rtc.getDayofWeek()]){
       if(rtc.getHour(true) == eventAux.hour){
         if(rtc.getMinute() >= eventAux.min){
-            action = true; 
+            enableAction = true; 
         }else {
-            action = false;
+            enableAction = false;
         }
       }else if(rtc.getHour(true) > eventAux.hour){
-        action = true;
+        enableAction = true;
       }else{
-        action = false;
+        enableAction = false;
       }
-  }else{
-    action = false;
   }
-  return action;
+  return enableAction;
 }
 
-bool SmartGreenhouse::stateDefine(Event events[]){
+bool SmartGreenhouse::stateDefine(int channel, Event events[]){
     bool stateDef = 1;
 
-        for (int i = 0; i < 7; i++) {
-          if (events[i].state){                              
-              if(timerAction(events[i])){
-                  //events[i].state = false;
-                  if(events[i].action){
-                      Serial.println("ENCENDIDO!!");
-                      stateDef = true;
-                    //fuente.encenderZona(bandLuces,zonaAux,colorR,colorG,colorB);
-                  }else{
-                      Serial.println("APAGADO!!");
-                      stateDef = false;
-                  }
-              }
-          }
+    for (int i = 0; i < 6; i++) {
+        if (events[i].state){                              
+            if(timerAction(events[i])){
+                if(events[i].action){
+                    Serial.println("ENCENDIDO!!");
+                    stateDef = true;
+                    //if(enableChFlag[channel-1])
+                        digitalWrite(ch[channel-1],!HIGH);
+                }else{
+                    Serial.println("APAGADO!!");
+                    stateDef = false;
+                    //if(enableChFlag[i])
+                        digitalWrite(ch[channel-1],!LOW);
+                }
+            }
+        }else{
+            
         }
-    /*}else{
-        stateDef = true;
-    }*/
+    }
     return stateDef;
 }
 
@@ -92,5 +101,48 @@ void SmartGreenhouse::sortEventsByTime(Event events[], int size) {
         }
     }
 }
+
+void SmartGreenhouse::printEventTimes(Event events[], int size) {
+    Serial.println("Event Times:");
+    for (int i = 0; i < size; i++) {
+        Serial.print("Event ");
+        Serial.print(i + 1);
+        Serial.print(": ");
+        Serial.print(events[i].hour);
+        Serial.print(":");
+        if (events[i].min < 10) {
+            Serial.print("0");
+        }
+        Serial.print(events[i].min);
+        Serial.print(", State: "); 
+        Serial.print(events[i].state); 
+        Serial.print(", Action: "); 
+        Serial.print(events[i].action); 
+        if(events[i].mon) Serial.print(", L: X"); 
+        if(events[i].tues) Serial.print(", M: X"); 
+        if(events[i].wend) Serial.print(", W: X"); 
+        if(events[i].thurs) Serial.print(", J: X"); 
+        if(events[i].fri) Serial.print(", F: X"); 
+        if(events[i].satu) Serial.print(", S: X"); 
+        if(events[i].sun) Serial.print(", D: X"); 
+
+        Serial.println();
+        
+        
+
+    }
+}
+
+bool SmartGreenhouse::dhtInit(uint8_t dhtPin){
+    //dht.begin();
+    return true;
+}
+
+/*float readDhtTemperature(){
+    //return dht.readHumidity();
+}
+float readDhtHumidity(){
+    //return dht.readTemperature();
+}*/
 
 

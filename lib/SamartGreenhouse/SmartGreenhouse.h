@@ -12,14 +12,14 @@ class SmartGreenhouse {
 
 public:
     //Variable y Estructuras para el control del Timer
-    const uint8_t CH1 = 25;
-    const uint8_t CH2 = 13;
-    const uint8_t CH3 = 12;
-    const uint8_t CH4 = 14;
-    const uint8_t CH5 = 27;
-    const uint8_t CH6 = 26;
-    const uint8_t CH7 = 2;
-    const uint8_t CH8 = 4;
+    const uint8_t CH1 = 13;
+    const uint8_t CH2 = 14; //14
+    const uint8_t CH3 = 27;  //27
+    const uint8_t CH4 = 26;
+    const uint8_t CH5 = 25;
+    const uint8_t CH6 = 33;
+    const uint8_t CH7 = 4;
+    const uint8_t CH8 = 16;
 
     bool enableChFlag[8] = {false,false,false,false,false,false,false,false};
 
@@ -50,8 +50,6 @@ public:
     Event eventsChannel2[6];
     Event eventsChannel3[6];
     Event eventsChannel4[6];
-    Event eventsChannel5[6];
-    Event eventsChannel6[6];
    
     ESP32Time rtc;
 

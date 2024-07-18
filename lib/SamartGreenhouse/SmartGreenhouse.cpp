@@ -56,10 +56,10 @@ bool SmartGreenhouse::timerAction(Event eventAux){
   return enableAction;
 }
 
-bool SmartGreenhouse::stateDefine(int channel, Event events[]){
-    bool stateDef = 1;
+bool SmartGreenhouse::stateDefine(int chn, Event events[]){
+    bool stateDef = true;
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 4; i++) {
         if (events[i].state){                              
             if(timerAction(events[i])){
                 if(events[i].action){
@@ -67,17 +67,22 @@ bool SmartGreenhouse::stateDefine(int channel, Event events[]){
                     stateDef = true;
                     //if(enableChFlag[channel-1])
                         //digitalWrite(ch[channel-1],LOW);
-                        this -> channel.numberChannel = ch[channel-1];
-                        this -> channel.state;
-                        enableChannel(this -> channel);
+                        
+                        this -> channel.numberChannel = ch[chn-1];
+                        this -> channel.state = stateDef;
+
+                        enableChFlag[chn-1] = channel.state; // Se guardo el estado en un arreglo
+                        enableChannel(this -> channel);      // Se aplica el cambio de estado
                 }else{
                     Serial.println("APAGADO!!");
                     stateDef = false;
                         //if(enableChFlag[i])
                         //digitalWrite(ch[channel-1],HIGH);
-                        this->channel.numberChannel = ch[channel-1];
-                        this->channel.state;
-                        enableChannel(this->channel);
+                        this->channel.numberChannel = ch[chn-1];
+                        this->channel.state = stateDef;
+
+                        enableChFlag[chn-1] = channel.state; // Se guardo el estado en un arreglo
+                        enableChannel(this -> channel);      // Se aplica el cambio de estado
                 }
             }
         }else{
@@ -109,6 +114,8 @@ void SmartGreenhouse::sortEventsByTime(Event events[], int size) {
 }
 
 void SmartGreenhouse::printEventTimes(Event events[], int size) {
+    //int numEvents = size;
+    //sortEventsByTime(events, numEvents); //Se organizan de menor a mayor respecto a la hora del dia
     Serial.println("Event Times:");
     for (int i = 0; i < size; i++) {
         Serial.print("Event ");

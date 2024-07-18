@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <ESP32Time.h>
+#include <FirebaseESP32.h>  // Para la comunicación con Firebase
 
 
 
@@ -46,10 +47,10 @@ public:
     };
 
     ChannelServer channel;
-    Event eventsChannel1[6];
-    Event eventsChannel2[6];
-    Event eventsChannel3[6];
-    Event eventsChannel4[6];
+    Event eventsChannel1[4];
+    Event eventsChannel2[4];
+    Event eventsChannel3[4];
+    Event eventsChannel4[4];
    
     ESP32Time rtc;
 

@@ -67,14 +67,14 @@ bool bandBT = false;        //Bandera para controlar la recepcion de datos seria
 
 
 //VARIABLES PARA LA CONFIGURACION DE LA RED WIFI
-volatile bool modoConfigBT = false; 
-bool modoConfigFB = true;
+volatile bool modeConfigBT = false; 
+bool modeConfigFire = true;
 bool modoConfigUID = true;
 bool bandUID = true;
-String SSID="REDGOINN";  //"JuanD",   REDGOINN,         Inverna        Moto_AH    
-String PASS="900791927G";  //"Cata1979",  900791927G   wiracocha       12345678
-String userID="";
-String UID="mSeD55cmDSeuSRx9T8yceAehvpA2";  //2k147bi5U8WDFrt3OWHOc0KMg7D3
+String ssidWifi="REDGOINN";  //"JuanD",   REDGOINN,         Inverna        Moto_AH    
+String passWifi="900791927G";  //"Cata1979",  900791927G   wiracocha       12345678
+//String userID="";
+String uidUserFire="mSeD55cmDSeuSRx9T8yceAehvpA2";  //2k147bi5U8WDFrt3OWHOc0KMg7D3
 
 //Variables para el control del parpadeo del led
 uint32_t tiempoActual = 0;
@@ -136,7 +136,7 @@ struct channel{
   bool state = false;
 };
 
-String userPath = "/users/1111111111"+UID;
+String userPath = "/users/"+uidUserFire;
 
 #define HOME         1
 //VARIABLES PARA EL CONTROL MAQUINA DE ESTADOS PRINCIPAL
@@ -483,7 +483,7 @@ void firebaseCallback(StreamData data){
 
 void getInfoTimerChanel(){
 
-    Firebase.get(fbdoStreaming, "/users/"+UID+"/channels/channel"+lastCharChannel+"/timers/timer"+lastCharTimer);
+    Firebase.get(fbdoStreaming, "/users/"+uidUserFire+"/channels/channel"+lastCharChannel+"/timers/timer"+lastCharTimer);
     jsStr = fbdoStreaming.jsonString();
     jsFb.setJsonData(jsStr);
 

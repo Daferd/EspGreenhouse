@@ -33,7 +33,7 @@ void setup() {
   //digitalWrite(garden.CH7,!LOW);
   digitalWrite(garden.CH8,!LOW);
 
-  /*if(InitWiFi(SSID,PASS)){ //Se verifica que la conexión a internet es correcta
+  /*if(InitWiFi(ssidWifi,passWifi)){ //Se verifica que la conexión a internet es correcta
 
       if(initFirebase(USER_EMAIL,USER_PASSWORD,USER_PATH)){
           Serial.println("...Se establecio StreamCalback con el PATH: ");Serial.println(USER_PATH);
@@ -67,14 +67,14 @@ void setup() {
   garden.sortEventsByTime(garden.eventsChannel1, numEvents);
   garden.printEventTimes(garden.eventsChannel1, numEvents);*/
 
-  modoConfigFB = true;
+  modeConfigFire = true;
   modoConfigUID = true;
 
 }
 
 void loop() {
 
-    if (modoConfigBT){
+    if (modeConfigBT){
 
         //Se apaga todos los canales por control (Se podria definir diferente)
         for (size_t i = 0; i < 4; i++){
@@ -84,7 +84,7 @@ void loop() {
         }
 
         SerialBT.begin("SmartGarden");     // Inicializamos la comunicación bluetooth serial.
-        modoConfigFB=true;
+        modeConfigFire=true;
         switch (STATE){
           case STATE_UID:{
             ledBlinkMillis(700);
@@ -94,20 +94,20 @@ void loop() {
                 if(bandUID){
                     /* Si tiene datos entrara en el while */
                     if(bandBT==false){
-                      UID = SerialBT.readString();            // Leemos únicamente 8bits y se almacena en “valor” 
+                      uidUserFire = SerialBT.readString();            // Leemos únicamente 8bits y se almacena en “valor” 
                       delay(100);
                       bandBT = true;
                     }
 
-                    espEeprom.putString("UID",UID);
+                    espEeprom.putString("uidUserFire",uidUserFire);
                     delay(100);
                     bandUID = false;
-                    espEeprom.putString("bandUID",UID);
+                    espEeprom.putString("bandUID",uidUserFire);
                     delay(100);
                 }      
                 
                 /* Enviamos el valor al monitor serial  */
-                Serial.println(UID);  
+                Serial.println(uidUserFire);  
                 bandBT = false; 
                 STATE = STATE_NAME;
             }
@@ -121,16 +121,16 @@ void loop() {
             while(SerialBT.available()){  // Checamos si el buffer del bluetooth serial tiene datos
                 /* Si tiene datos entrara en el while */
                 if(bandBT==false){
-                  SSID = SerialBT.readString();            // Leemos únicamente 8bits y se almacena en “valor” 
+                  ssidWifi = SerialBT.readString();            // Leemos únicamente 8bits y se almacena en “valor” 
                   delay(150);
                   bandBT = true;
                 }
 
-                espEeprom.putString("SSID",SSID);
+                espEeprom.putString("ssidWifi",ssidWifi);
                 delay(150);
                 
                 /* Enviamos el valor al monitor serial  */
-                Serial.println(SSID);  
+                Serial.println(ssidWifi);  
                 bandBT = false; 
                 STATE = STATE_PASS;
             }
@@ -143,16 +143,16 @@ void loop() {
             while(SerialBT.available()){          // Checamos si el buffer del bluetooth serial tiene datos
                   /* Si tiene datos entrara en el while */
                   if(bandBT==false){
-                    PASS = SerialBT.readString();            // Leemos el string y se almacena en “PASS” 
+                    passWifi = SerialBT.readString();            // Leemos el string y se almacena en “PASS” 
                     delay(150);
                     bandBT = true;
                   }
 
-                  espEeprom.putString("PASS",PASS);
+                  espEeprom.putString("passWifi",passWifi);
                   delay(150);
                   
                   /* Enviamos el valor al monitor serial  */
-                  Serial.println(PASS);   
+                  Serial.println(passWifi);   
                   
                   STATE = STATE_WIFINIT;
             }
@@ -164,12 +164,12 @@ void loop() {
               if(SerialBT.disconnect()){
                   
                   Serial.print("********** STATE: "); Serial.println(STATE);
-                  Serial.print("Nombre red: "); Serial.println(SSID);
-                  Serial.print("Pass red: "); Serial.println(PASS);
-                  Serial.print("userID: "); Serial.println(UID);
+                  Serial.print("Nombre red: "); Serial.println(ssidWifi);
+                  Serial.print("passWifi red: "); Serial.println(passWifi);
+                  Serial.print("userID: "); Serial.println(uidUserFire);
 
-                  modoConfigBT = false;
-                  espEeprom.putBool("bandBT",modoConfigBT);
+                  modeConfigBT = false;
+                  espEeprom.putBool("bandBT",modeConfigBT);
                   STATE = STATE_UID;
                   SerialBT.end();
               } else {
@@ -183,13 +183,13 @@ void loop() {
         }
 
     }else{
-        if (modoConfigFB){
+        if (modeConfigFire){
               SerialBT.end(); //Se finaliza la comunicación Bluethoot
 
               //Se inicializa la configuración WiFi y se actualiza la hora desde la web 
-              //SSID="Moto_AH";  //"JuanD",   REDGOINN,         VORTIC
-              //PASS="12345678";  //"Cata1979",  900791927G   9876543210*
-              if(InitWiFi(SSID,PASS)){ //Se verifica que la conexión a internet es correcta
+              //ssidWifi="Moto_AH";  //"JuanD",   REDGOINN,         VORTIC
+              //passWifi="12345678";  //"Cata1979",  900791927G   9876543210*
+              if(InitWiFi(ssidWifi,passWifi)){ //Se verifica que la conexión a internet es correcta
 
                   config.api_key = API_KEY;
                   // Assign the user sign in credentials
@@ -215,11 +215,11 @@ void loop() {
                   //Tamaño y  tiempo de espera de escritura, tiny (1s), small (10s), medium (30s) and large (60s).
                   //tiny, small, medium, large and unlimited.
                   //Firebase.setwriteSizeLimit(myFirebaseData, "tiny");
-                  userPath = "/users/"+ UID;  //Se almacena el path personalizado del usuario, a este se le asocia el UID de Firebase
+                  userPath = "/users/"+ uidUserFire;  //Se almacena el path personalizado del usuario, a este se le asocia el uidUserFire de Firebase
                   Serial.println("PATH DEFINIDO: "+userPath);
                   delay(1000);
                   
-                  modoConfigFB=false;
+                  modeConfigFire=false;
                   
               } 
               
@@ -266,14 +266,13 @@ void loop() {
             }else{
                 Serial.println("SE PERDIO LA CONEXION!!");
                 contIntentos = 0;
-                InitWiFi(SSID,PASS);
+                InitWiFi(ssidWifi,passWifi);
             }
         }
     }
 }
 
 void readSensors(void){
-  //ssd
   tiempoComp = millis();
 
   float temperatureDHT = random(25,40);

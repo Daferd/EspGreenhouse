@@ -273,6 +273,7 @@ void loop() {
 }
 
 void readSensors(void){
+  //ssd
   tiempoComp = millis();
 
   float temperatureDHT = random(25,40);

@@ -42,8 +42,30 @@ void setup() {
   //unsigned char delayEprom = 100;
   loadEeprom();
   
+  //HACE FALTA VERIFICAR QUE RETOME LOS ESTADOS QUE TENIA ANTES DEL REINICIO
+  garden.channel.numberChannel = 1;
+  garden.channel.state = garden.enableChFlag[0];
+  garden.enableInvChannel(garden.channel);
+  delay(1000); //Se pausa para que los actuadores no enciendan todos a la vez, si no de uno en uno
+
+  garden.channel.numberChannel = 2;
+  garden.channel.state = garden.enableChFlag[1];
+  garden.enableInvChannel(garden.channel);
+  delay(1000); //Se pausa para que los actuadores no enciendan todos a la vez, si no de uno en uno
+
+  garden.channel.numberChannel = 3;
+  garden.channel.state = garden.enableChFlag[2];
+  garden.enableInvChannel(garden.channel);
+  delay(1000); //Se pausa para que los actuadores no enciendan todos a la vez, si no de uno en uno
+
+  garden.channel.numberChannel = 4;
+  garden.channel.state = garden.enableChFlag[3];
+  garden.enableInvChannel(garden.channel);
+  delay(1000); //Se pausa para que los actuadores no enciendan todos a la vez, si no de uno en uno
+
+
   modeConfigFire = true;
-  modoConfigUID = true;
+  //modoConfigUID = true;
 
 }
 
@@ -172,6 +194,11 @@ void loop() {
             if (WiFi.status() == WL_CONNECTED){
                  
                     if(flagTimer){
+                        flagTimer = false;
+
+                        // SE DEBE CORREGIR EL TEMA DE LA INSTRUCCIÓN FIREBASE.SET() QUE SE EJECUTA SIEMPRE EXISTA O NO EL TIMER HABILITADO
+                        // IMLICA QUE CREA EL TIMER EN FIREBASE Y ESTO HACE QUE SE VEA EN LA APP, CUANDO NO DEBERIA SER ASI
+                        // SE SUGIERE SACAR EL CONTROL DE HORARIOS DE LA CLASE SMARTGREENHOUSE PARA USARLA CON FIREBASE
                         Serial.print("Hora actualizada: "); Serial.print(rtc.getTime()); Serial.print(", Dia: "); Serial.println(rtc.getDay());
                         
                         uint8_t ch = 1;
@@ -193,8 +220,6 @@ void loop() {
                         garden.stateDefine(4,garden.eventsChannel4);
                         printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
                         Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
-                        
-                        flagTimer = false;
                     }
                     
                     if (millis() - tiempoComp >= SENSOR_READ_TIME_MS) 

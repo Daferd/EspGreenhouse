@@ -149,10 +149,10 @@ bool bandBT = false;        //Bandera para controlar la recepcion de datos seria
 //VARIABLES PARA LA CONFIGURACION DE LA RED WIFI
 volatile bool modeConfigBT = false; 
 bool modeConfigFire = true;
-bool modoConfigUID = true;
+//bool modoConfigUID = true;
 bool bandUID = true;
-String ssidWifi="REDGOINN";  //"JuanD",   REDGOINN,         Inverna        Moto_AH    
-String passWifi="900791927G";  //"Cata1979",  900791927G   wiracocha       12345678
+String ssidWifi="Moto_AH";  //"JuanD",   REDGOINN,         Inverna        Moto_AH    
+String passWifi="12345678";  //"Cata1979",  900791927G   wiracocha       12345678
 //String userID="";
 String uidUserFire="mSeD55cmDSeuSRx9T8yceAehvpA2";  //2k147bi5U8WDFrt3OWHOc0KMg7D3
 
@@ -455,12 +455,12 @@ void receiveBoolData(void){
         //Firebase.get(fbdo,"users");
         printMsg("Modificado Canal",lastCharChannel.toInt());
         garden.channel.state=valorBool;
-        garden.channel.numberChannel=garden.ch[lastCharChannel.toInt()-1];
+        garden.channel.numberChannel=lastCharChannel.toInt();
         //garden.channel.numberChannel=CH1;
         String nameEeprom = "Ch"+lastCharChannel+"State";
         //printMsg(nameEeprom, 123);
         garden.enableChFlag[lastCharChannel.toInt()-1]=garden.channel.state;
-        garden.enableChannel(garden.channel);
+        garden.enableInvChannel(garden.channel);
         espEeprom.putBool(nameEeprom.c_str(),garden.channel.state);
         
         //Se desactivan los eventos relacionados al canal, por si hubiese alguno activado de manera que se deje trabajar en modo manual (Con los botones)
@@ -912,6 +912,23 @@ void loadEeprom(){
 
     /*modeConfigBT = espEeprom.getBool("modeConfigBT",modeConfigBT);
     delay(delayEprom);*/
+
+    garden.enableChFlag[0] = espEeprom.getBool("Ch1State",true);
+    Serial.print("state Ch1: ");Serial.println(garden.enableChFlag[0]);
+    delay(delayEprom);
+
+    garden.enableChFlag[1] = espEeprom.getBool("Ch2State",true);
+    Serial.print("state Ch2: ");Serial.println(garden.enableChFlag[1]);
+    delay(delayEprom);
+
+    garden.enableChFlag[2] = espEeprom.getBool("Ch3State",true);
+    Serial.print("state Ch3: ");Serial.println(garden.enableChFlag[2]);
+    delay(delayEprom);
+
+    garden.enableChFlag[3] = espEeprom.getBool("Ch4State",true);
+    Serial.print("state Ch4: ");Serial.println(garden.enableChFlag[3]);
+    delay(delayEprom);
+
     
 
     for (uint8_t chn = 0; chn < CHANNELS_TOTAL; chn++){

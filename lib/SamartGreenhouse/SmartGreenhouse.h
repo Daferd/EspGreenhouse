@@ -60,6 +60,7 @@ public:
     ~SmartGreenhouse();
 
     void  enableChannel(ChannelServer channel);
+    void enableInvChannel(ChannelServer channel);
     bool  stateDefine(int channel,Event events[]);
     float readDigitalSensor(uint8_t sensorPin);
     bool dhtInit(uint8_t dhtPin);
@@ -69,6 +70,7 @@ public:
     bool timerAction(Event eventAux);
     void sortEventsByTime(Event events[], int size);
     void swapEvents(Event &event1, Event &event2);
+    
     
 
 private:

@@ -24,8 +24,12 @@ float SmartGreenhouse::readDigitalSensor(uint8_t sensorPin){
     
 }
 
+void SmartGreenhouse::enableInvChannel(ChannelServer channel){
+    digitalWrite(ch[channel.numberChannel-1],!channel.state);
+}
+
 void SmartGreenhouse::enableChannel(ChannelServer channel){
-    digitalWrite(channel.numberChannel,!channel.state);
+    digitalWrite(ch[channel.numberChannel-1],channel.state);
 }
 
 bool SmartGreenhouse::timerAction(Event eventAux){
@@ -68,21 +72,21 @@ bool SmartGreenhouse::stateDefine(int chn, Event events[]){
                     //if(enableChFlag[channel-1])
                         //digitalWrite(ch[channel-1],LOW);
                         
-                        this -> channel.numberChannel = ch[chn-1];
+                        this -> channel.numberChannel = chn;
                         this -> channel.state = stateDef;
 
                         enableChFlag[chn-1] = channel.state; // Se guardo el estado en un arreglo
-                        enableChannel(this -> channel);      // Se aplica el cambio de estado
+                        enableInvChannel(this -> channel);      // Se aplica el cambio de estado
                 }else{
                     Serial.println("APAGADO!!");
                     stateDef = false;
                         //if(enableChFlag[i])
                         //digitalWrite(ch[channel-1],HIGH);
-                        this->channel.numberChannel = ch[chn-1];
+                        this->channel.numberChannel = chn-1;
                         this->channel.state = stateDef;
 
                         enableChFlag[chn-1] = channel.state; // Se guardo el estado en un arreglo
-                        enableChannel(this -> channel);      // Se aplica el cambio de estado
+                        enableInvChannel(this -> channel);      // Se aplica el cambio de estado
                 }
             }
         }else{

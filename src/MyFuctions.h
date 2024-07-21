@@ -256,7 +256,6 @@ void IRAM_ATTR onTimer1(){
   //printMsg("Timmer ", 1);
 }
 
-
 void readSensorsTask(void *pvParameters) {
   
   while (1) {
@@ -330,7 +329,6 @@ bool InitWiFi(String SSID, String PASS){
     WiFi.begin(nombreRed,passRed);                   // Inicializamos el WiFi con nuestras credenciales.
     Serial.print("***** INCIANDO PROCESO DE CONEXIÓN A RED: ");Serial.print(nombreRed);Serial.print(" *****");Serial.println(" ");
     tiempoCompAux = millis();
-    bool stateLed = false;
     //while(((WiFi.status() != WL_CONNECTED) && contIntentos == 0) || (contIntentos <= MAX_INTENT)){     // Se quedata en este bucle hasta que el estado del WiFi sea diferente a desconectado.  
     while(WiFi.status() != WL_CONNECTED){     // Se quedata en este bucle hasta que el estado del WiFi sea diferente a desconectado.  
         

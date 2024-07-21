@@ -25,7 +25,7 @@ float SmartGreenhouse::readDigitalSensor(uint8_t sensorPin){
 }
 
 void SmartGreenhouse::enableInvChannel(ChannelServer channel){
-    digitalWrite(ch[channel.numberChannel-1],!channel.state);
+    digitalWrite(ch[channel.numberChannel-1],channel.state);
 }
 
 void SmartGreenhouse::enableChannel(ChannelServer channel){
@@ -60,8 +60,8 @@ bool SmartGreenhouse::timerAction(Event eventAux){
   return enableAction;
 }
 
-bool SmartGreenhouse::stateDefine(int chn, Event events[]){
-    bool stateDef = true;
+bool SmartGreenhouse::stateDefine(int chn, Event events[],bool courrentState){
+    bool stateDef = courrentState;
 
     for (int i = 0; i < 4; i++) {
         if (events[i].state){                              
@@ -75,8 +75,9 @@ bool SmartGreenhouse::stateDefine(int chn, Event events[]){
                         this -> channel.numberChannel = chn;
                         this -> channel.state = stateDef;
 
-                        enableChFlag[chn-1] = channel.state; // Se guardo el estado en un arreglo
-                        enableInvChannel(this -> channel);      // Se aplica el cambio de estado
+                        enableChFlag[chn-1] = stateDef; // Se guardo el estado en un arreglo
+                        //digitalWrite(garden.enableChFlag[lastCharChannel.toInt()-1],!valorBool);
+                        //enableInvChannel(this -> channel);      // Se aplica el cambio de estado
                 }else{
                     Serial.println("APAGADO!!");
                     stateDef = false;
@@ -85,8 +86,9 @@ bool SmartGreenhouse::stateDefine(int chn, Event events[]){
                         this->channel.numberChannel = chn-1;
                         this->channel.state = stateDef;
 
-                        enableChFlag[chn-1] = channel.state; // Se guardo el estado en un arreglo
-                        enableInvChannel(this -> channel);      // Se aplica el cambio de estado
+                        enableChFlag[chn-1] = stateDef; // Se guardo el estado en un arreglo
+                        
+                        //enableInvChannel(this -> channel);      // Se aplica el cambio de estado
                 }
             }
         }else{

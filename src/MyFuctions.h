@@ -144,15 +144,18 @@ BluetoothSerial SerialBT;   //Declaramos un objeto de tipo BluetoothSerial.
 byte STATE = STATE_UID;     //Variable para control de los estados en la configuración Bluethoot
 bool bandBT = false;        //Bandera para controlar la recepcion de datos serial
 
-
+bool stateCh1 = false;
+bool stateCh2 = false;
+bool stateCh3 = false;
+bool stateCh4 = false;
 
 //VARIABLES PARA LA CONFIGURACION DE LA RED WIFI
 volatile bool modeConfigBT = false; 
 bool modeConfigFire = true;
 //bool modoConfigUID = true;
 bool bandUID = true;
-String ssidWifi="Moto_AH";  //"JuanD",   REDGOINN,         Inverna        Moto_AH    
-String passWifi="12345678";  //"Cata1979",  900791927G   wiracocha       12345678
+String ssidWifi="Inverna";  //"JuanD",   REDGOINN,         Inverna        Moto_AH    
+String passWifi="wiracocha";  //"Cata1979",  900791927G   wiracocha       12345678
 //String userID="";
 String uidUserFire="mSeD55cmDSeuSRx9T8yceAehvpA2";  //2k147bi5U8WDFrt3OWHOc0KMg7D3
 
@@ -222,7 +225,7 @@ String userPath = "/users/"+uidUserFire;
 //VARIABLES PARA EL CONTROL MAQUINA DE ESTADOS PRINCIPAL
 unsigned char state = HOME;  //HOME
 
-bool flagTimer = false;
+bool flagShedulesStart = true;
 bool flagTimerCh1 = false;
 hw_timer_t *timer1 = NULL; // Apuntador a variable de tipo hw_timer_t que luego usaremos en la función de configuración de Arduino.
 
@@ -252,7 +255,7 @@ void loadEeprom();
 void CausaError(void);
 
 void IRAM_ATTR onTimer1(){
-  flagTimer = true;
+  flagShedulesStart = true;
   //printMsg("Timmer ", 1);
 }
 
@@ -457,8 +460,9 @@ void receiveBoolData(void){
         //garden.channel.numberChannel=CH1;
         String nameEeprom = "Ch"+lastCharChannel+"State";
         //printMsg(nameEeprom, 123);
-        garden.enableChFlag[lastCharChannel.toInt()-1]=garden.channel.state;
-        garden.enableInvChannel(garden.channel);
+        garden.enableChFlag[lastCharChannel.toInt()-1]=valorBool;
+        digitalWrite(garden.ch[lastCharChannel.toInt()-1],!valorBool);
+        //garden.enableInvChannel(garden.channel);
         espEeprom.putBool(nameEeprom.c_str(),garden.channel.state);
         
         //Se desactivan los eventos relacionados al canal, por si hubiese alguno activado de manera que se deje trabajar en modo manual (Con los botones)

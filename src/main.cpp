@@ -7,7 +7,7 @@
 void readSensors(void);
 
 void setup() {
-  Serial.begin(9600);
+  //Serial.begin(9600);
   //garden.dhtInit(DHT_PIN);
   dht.begin();
 
@@ -33,17 +33,11 @@ void setup() {
   //digitalWrite(garden.CH7,!LOW);
   digitalWrite(garden.CH8,!LOW);
 
-
-  timer1 = timerBegin(1,80,true); //se escogio un preescalador de 80, es decir se divide la frecuencia normal de operación(80MHz), entre 80(preescalador), quedando frecuencia para el contador del timer de 10MHZ(periodo 1 microsegundo)
-  timerAttachInterrupt(timer1, &onTimer1, true); //Esta función recibe como entrada un puntero al temporizador inicializado, que almacenamos en nuestra variable global, la dirección de la función que manejará la interrupción y una bandera que indica si la interrupción que se va a generar es de flanco (verdadero) o de nivel (falso)
-  timerAlarmWrite(timer1,60000000,true);  // Con un valor de 23000 garantizamos que la 
-  timerAlarmEnable(timer1);
-
   //unsigned char delayEprom = 100;
-  loadEeprom();
+  //loadEeprom();
   
   //HACE FALTA VERIFICAR QUE RETOME LOS ESTADOS QUE TENIA ANTES DEL REINICIO
-  garden.channel.numberChannel = 1;
+  /*garden.channel.numberChannel = 1;
   garden.channel.state = garden.enableChFlag[0];
   garden.enableInvChannel(garden.channel);
   delay(1000); //Se pausa para que los actuadores no enciendan todos a la vez, si no de uno en uno
@@ -62,7 +56,7 @@ void setup() {
   garden.channel.state = garden.enableChFlag[3];
   garden.enableInvChannel(garden.channel);
   delay(1000); //Se pausa para que los actuadores no enciendan todos a la vez, si no de uno en uno
-
+*/
 
   modeConfigFire = true;
   //modoConfigUID = true;
@@ -193,37 +187,48 @@ void loop() {
         }else{
             if (WiFi.status() == WL_CONNECTED){
                  
-                    if(flagTimer){
-                        flagTimer = false;
-
-                        // SE DEBE CORREGIR EL TEMA DE LA INSTRUCCIÓN FIREBASE.SET() QUE SE EJECUTA SIEMPRE EXISTA O NO EL TIMER HABILITADO
-                        // IMLICA QUE CREA EL TIMER EN FIREBASE Y ESTO HACE QUE SE VEA EN LA APP, CUANDO NO DEBERIA SER ASI
-                        // SE SUGIERE SACAR EL CONTROL DE HORARIOS DE LA CLASE SMARTGREENHOUSE PARA USARLA CON FIREBASE
-                        Serial.print("Hora actualizada: "); Serial.print(rtc.getTime()); Serial.print(", Dia: "); Serial.println(rtc.getDay());
-                        
-                        uint8_t ch = 1;
-                        garden.stateDefine(ch,garden.eventsChannel1);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
-                        printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
-                        Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
-                        
-                        ch = 2;
-                        bool stateChannel2 = garden.stateDefine(ch,garden.eventsChannel2);
-                        printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
-                        Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
-                        
-                        ch = 3;
-                        garden.stateDefine(3,garden.eventsChannel3);
-                        printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
-                        Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
-                        
-                        ch=4;
-                        garden.stateDefine(4,garden.eventsChannel4);
-                        printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
-                        Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
-                    }
+                if (rtc.getSecond()==0 && flagShedulesStart==true){
+                    flagShedulesStart = false;
+                    // SE DEBE CORREGIR EL TEMA DE LA INSTRUCCIÓN FIREBASE.SET() QUE SE EJECUTA SIEMPRE EXISTA O NO EL TIMER HABILITADO
+                    // IMLICA QUE CREA EL TIMER EN FIREBASE Y ESTO HACE QUE SE VEA EN LA APP, CUANDO NO DEBERIA SER ASI
+                    // SE SUGIERE SACAR EL CONTROL DE HORARIOS DE LA CLASE SMARTGREENHOUSE PARA USARLA CON FIREBASE
+                    Serial.println("Hora actualizada: "); Serial.print(rtc.getTime()); Serial.print(", Dia: "); Serial.println(rtc.getDay());
                     
-                    if (millis() - tiempoComp >= SENSOR_READ_TIME_MS) 
-                        readSensors();
+                    readSensors();
+
+                    uint8_t ch = 1;
+                    bool stateCh1 = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
+                    digitalWrite(garden.ch[ch-1],!stateCh1);
+                    garden.enableChFlag[ch-1] = stateCh1;
+                    printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
+                    Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
+                    
+                    ch = 2;
+                    bool stateCh2 = garden.stateDefine(ch,garden.eventsChannel2,garden.enableChFlag[ch-1]);
+                    digitalWrite(garden.ch[ch-1],!stateCh2);
+                    garden.enableChFlag[ch-1] = stateCh2;
+                    printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
+                    Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
+                    
+                    ch = 3;
+                    bool stateCh3=garden.stateDefine(ch,garden.eventsChannel3,garden.enableChFlag[ch-1]);
+                    digitalWrite(garden.ch[ch-1],!stateCh3);
+                    garden.enableChFlag[ch-1] = stateCh3;
+                    printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
+                    Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
+                    
+                    ch=4;
+                    bool stateCh4=garden.stateDefine(ch,garden.eventsChannel4,garden.enableChFlag[ch-1]);
+                    digitalWrite(garden.ch[ch-1],!stateCh4);
+                    garden.enableChFlag[ch-1] = stateCh4;
+                    printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
+                    Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
+                }
+                
+                if(rtc.getSecond()==30) flagShedulesStart = true;
+
+                    
+                //if (millis() - tiempoComp >= SENSOR_READ_TIME_MS) readSensors();
                   
             }else{
                 Serial.println("SE PERDIO LA CONEXION!!");

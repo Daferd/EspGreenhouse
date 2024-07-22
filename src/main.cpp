@@ -196,33 +196,33 @@ void loop() {
                     
                     //readSensors();
 
-                    uint8_t ch = 1;
-                    bool stateCh1 = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
-                    digitalWrite(garden.ch[ch-1],stateCh1);
-                    garden.enableChFlag[ch-1] = stateCh1;
-                    printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
-                    Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
                     
-                    ch = 2;
-                    bool stateCh2 = garden.stateDefine(ch,garden.eventsChannel2,garden.enableChFlag[ch-1]);
-                    digitalWrite(garden.ch[ch-1],stateCh2);
-                    garden.enableChFlag[ch-1] = stateCh2;
-                    printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
-                    Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
                     
-                    ch = 3;
-                    bool stateCh3=garden.stateDefine(ch,garden.eventsChannel3,garden.enableChFlag[ch-1]);
-                    digitalWrite(garden.ch[ch-1],stateCh3);
-                    garden.enableChFlag[ch-1] = stateCh3;
-                    printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
-                    Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
+                    uint8_t ch =1;
+                    garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
                     
-                    ch=4;
-                    bool stateCh4=garden.stateDefine(ch,garden.eventsChannel4,garden.enableChFlag[ch-1]);
-                    digitalWrite(garden.ch[ch-1],stateCh4);
-                    garden.enableChFlag[ch-1] = stateCh4;
-                    printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
-                    Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
+                    ch =2;
+                    garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel2,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
+                    
+                    ch =3;
+                    garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
+                    
+                    ch = 4;
+                    garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
+                    
+                    //Se actualiza la base de datos, se aplica el cambio y se imprime en pantalla
+                    for (uint8_t ch = 1; ch <= CHANNELS_TOTAL; ch++){
+                      Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
+                      
+                      garden.channel.numberChannel = ch;
+                      garden.channel.state = garden.enableChFlag[ch-1];
+                      garden.enableChannel(garden.channel);
+                      
+                      printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
+                      //delay(10);
+                    }
+                    
+                    
                 }
                 
                 if(rtc.getSecond()==30) flagShedulesStart = true;

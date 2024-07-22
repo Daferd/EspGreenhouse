@@ -32,8 +32,8 @@ void SmartGreenhouse::enableChannel(ChannelServer channel){
     digitalWrite(ch[channel.numberChannel-1],channel.state);
 }
 
-bool SmartGreenhouse::timerAction(Event eventAux){
-  bool enableAction=false; 
+bool SmartGreenhouse::timerAction(Event eventAux, bool stateCourrent){
+  bool enableAction=stateCourrent; 
   bool listDays[]={false,false,false,false,false,false,false};
   
   listDays[0] = eventAux.sun;
@@ -47,15 +47,15 @@ bool SmartGreenhouse::timerAction(Event eventAux){
   if(listDays[rtc.getDayofWeek()]){
       if(rtc.getHour(true) == eventAux.hour){
         if(rtc.getMinute() >= eventAux.min){
-            enableAction = true; 
-        }else {
+            enableAction = eventAux.action; 
+        }/*else {
             enableAction = false;
-        }
+        }*/
       }else if(rtc.getHour(true) > eventAux.hour){
-        enableAction = true;
-      }else{
+        enableAction = eventAux.action;
+      }/*else{
         enableAction = false;
-      }
+      }*/
   }
   return enableAction;
 }
@@ -65,35 +65,10 @@ bool SmartGreenhouse::stateDefine(int chn, Event events[],bool courrentState){
 
     for (int i = 0; i < 4; i++) {
         if (events[i].state){                              
-            if(timerAction(events[i])){
-                if(events[i].action){
-                    Serial.println("ENCENDIDO!!");
-                    stateDef = true;
-                    //if(enableChFlag[channel-1])
-                        //digitalWrite(ch[channel-1],LOW);
-                        
-                        this -> channel.numberChannel = chn;
-                        this -> channel.state = stateDef;
-
-                        enableChFlag[chn-1] = stateDef; // Se guardo el estado en un arreglo
-                        //digitalWrite(garden.enableChFlag[lastCharChannel.toInt()-1],!valorBool);
-                        //enableInvChannel(this -> channel);      // Se aplica el cambio de estado
-                }else{
-                    Serial.println("APAGADO!!");
-                    stateDef = false;
-                        //if(enableChFlag[i])
-                        //digitalWrite(ch[channel-1],HIGH);
-                        this->channel.numberChannel = chn-1;
-                        this->channel.state = stateDef;
-
-                        enableChFlag[chn-1] = stateDef; // Se guardo el estado en un arreglo
-                        
-                        //enableInvChannel(this -> channel);      // Se aplica el cambio de estado
-                }
-            }
-        }else{
-            
-        }
+            stateDef = timerAction(events[i],stateDef);
+        }/*else{
+            return stateDef;
+        }*/
     }
     return stateDef;
 }

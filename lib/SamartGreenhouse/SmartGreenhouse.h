@@ -67,7 +67,7 @@ public:
     float readDhtTemperature();
     float readDhtHumidity();
     void printEventTimes(Event events[], int size);
-    bool timerAction(Event eventAux);
+    bool timerAction(Event eventAux, bool stateCourrent);
     void sortEventsByTime(Event events[], int size);
     void swapEvents(Event &event1, Event &event2);
     

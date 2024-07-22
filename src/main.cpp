@@ -7,7 +7,7 @@
 void readSensors(void);
 
 void setup() {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   //garden.dhtInit(DHT_PIN);
   dht.begin();
 
@@ -24,39 +24,39 @@ void setup() {
   pinMode(garden.CH7, OUTPUT);
   pinMode(garden.CH8, OUTPUT);
 
-  digitalWrite(garden.CH1,!LOW);
-  digitalWrite(garden.CH2,!LOW);
-  digitalWrite(garden.CH3,!LOW);
-  digitalWrite(garden.CH4,!LOW);
-  digitalWrite(garden.CH5,!LOW);
-  digitalWrite(garden.CH6,!LOW);
+  digitalWrite(garden.CH1,LOW);
+  digitalWrite(garden.CH2,LOW);
+  digitalWrite(garden.CH3,LOW);
+  digitalWrite(garden.CH4,LOW);
+  digitalWrite(garden.CH5,LOW);
+  digitalWrite(garden.CH6,LOW);
   //digitalWrite(garden.CH7,!LOW);
-  digitalWrite(garden.CH8,!LOW);
+  digitalWrite(garden.CH8,LOW);
 
   //unsigned char delayEprom = 100;
-  //loadEeprom();
+  loadEeprom();
   
   //HACE FALTA VERIFICAR QUE RETOME LOS ESTADOS QUE TENIA ANTES DEL REINICIO
-  /*garden.channel.numberChannel = 1;
+  garden.channel.numberChannel = 1;
   garden.channel.state = garden.enableChFlag[0];
-  garden.enableInvChannel(garden.channel);
+  garden.enableChannel(garden.channel);
   delay(1000); //Se pausa para que los actuadores no enciendan todos a la vez, si no de uno en uno
 
   garden.channel.numberChannel = 2;
   garden.channel.state = garden.enableChFlag[1];
-  garden.enableInvChannel(garden.channel);
+  garden.enableChannel(garden.channel);
   delay(1000); //Se pausa para que los actuadores no enciendan todos a la vez, si no de uno en uno
 
   garden.channel.numberChannel = 3;
   garden.channel.state = garden.enableChFlag[2];
-  garden.enableInvChannel(garden.channel);
+  garden.enableChannel(garden.channel);
   delay(1000); //Se pausa para que los actuadores no enciendan todos a la vez, si no de uno en uno
 
   garden.channel.numberChannel = 4;
   garden.channel.state = garden.enableChFlag[3];
-  garden.enableInvChannel(garden.channel);
+  garden.enableChannel(garden.channel);
   delay(1000); //Se pausa para que los actuadores no enciendan todos a la vez, si no de uno en uno
-*/
+
 
   modeConfigFire = true;
   //modoConfigUID = true;
@@ -194,32 +194,32 @@ void loop() {
                     // SE SUGIERE SACAR EL CONTROL DE HORARIOS DE LA CLASE SMARTGREENHOUSE PARA USARLA CON FIREBASE
                     Serial.println("Hora actualizada: "); Serial.print(rtc.getTime()); Serial.print(", Dia: "); Serial.println(rtc.getDay());
                     
-                    readSensors();
+                    //readSensors();
 
                     uint8_t ch = 1;
                     bool stateCh1 = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
-                    digitalWrite(garden.ch[ch-1],!stateCh1);
+                    digitalWrite(garden.ch[ch-1],stateCh1);
                     garden.enableChFlag[ch-1] = stateCh1;
                     printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
                     Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
                     
                     ch = 2;
                     bool stateCh2 = garden.stateDefine(ch,garden.eventsChannel2,garden.enableChFlag[ch-1]);
-                    digitalWrite(garden.ch[ch-1],!stateCh2);
+                    digitalWrite(garden.ch[ch-1],stateCh2);
                     garden.enableChFlag[ch-1] = stateCh2;
                     printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
                     Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
                     
                     ch = 3;
                     bool stateCh3=garden.stateDefine(ch,garden.eventsChannel3,garden.enableChFlag[ch-1]);
-                    digitalWrite(garden.ch[ch-1],!stateCh3);
+                    digitalWrite(garden.ch[ch-1],stateCh3);
                     garden.enableChFlag[ch-1] = stateCh3;
                     printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
                     Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
                     
                     ch=4;
                     bool stateCh4=garden.stateDefine(ch,garden.eventsChannel4,garden.enableChFlag[ch-1]);
-                    digitalWrite(garden.ch[ch-1],!stateCh4);
+                    digitalWrite(garden.ch[ch-1],stateCh4);
                     garden.enableChFlag[ch-1] = stateCh4;
                     printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
                     Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);

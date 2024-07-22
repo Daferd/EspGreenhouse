@@ -154,10 +154,10 @@ volatile bool modeConfigBT = false;
 bool modeConfigFire = true;
 //bool modoConfigUID = true;
 bool bandUID = true;
-String ssidWifi="Inverna";  //"JuanD",   REDGOINN,         Inverna        Moto_AH    
-String passWifi="wiracocha";  //"Cata1979",  900791927G   wiracocha       12345678
+String ssidWifi="REDGOINN";  //"JuanD",   REDGOINN,         Inverna/ESCOBAR_ME        Moto_AH    
+String passWifi="900791927G";  //"Cata1979",  900791927G             wiracocha          12345678
 //String userID="";
-String uidUserFire="mSeD55cmDSeuSRx9T8yceAehvpA2";  //2k147bi5U8WDFrt3OWHOc0KMg7D3
+String uidUserFire="2k147bi5U8WDFrt3OWHOc0KMg7D3";  //2k147bi5U8WDFrt3OWHOc0KMg7D3   mSeD55cmDSeuSRx9T8yceAehvpA2
 
 //Variables para el control del parpadeo del led
 uint32_t tiempoActual = 0;
@@ -433,8 +433,8 @@ void receiveJsonData(void){
     lastCharTimer = namePath.substring(namePath.length() - 1);
 
     Serial.println(namePath);
-    Serial.print("ultima: ");
-    Serial.println(lastCharChannel);
+    //Serial.print("ultima: ");
+    //Serial.println(lastCharChannel);
 
 
     if(namePath.equals("/channels/channel"+lastCharChannel+"/timers/timer"+lastCharTimer)){
@@ -453,23 +453,26 @@ void receiveBoolData(void){
     
     //REVISAR SI ES NECESARIO 03/04/2024
     if(namePath.equals("/channels/channel"+lastCharChannel+"/state")){  //Con la ultima letra del namePath se define cual fue el canal que se modifico
-        //Firebase.get(fbdo,"users");
-        printMsg("Modificado Canal",lastCharChannel.toInt());
+       
+        //Se recibe la data modificada eb FB
         garden.channel.state=valorBool;
         garden.channel.numberChannel=lastCharChannel.toInt();
-        //garden.channel.numberChannel=CH1;
+
+        //Se guarda en un arreglo que contiene los estados de cada canal y en la Eeprom 
+        garden.enableChFlag[lastCharChannel.toInt()-1]=garden.channel.state;
+
         String nameEeprom = "Ch"+lastCharChannel+"State";
-        //printMsg(nameEeprom, 123);
-        garden.enableChFlag[lastCharChannel.toInt()-1]=valorBool;
-        digitalWrite(garden.ch[lastCharChannel.toInt()-1],!valorBool);
-        //garden.enableInvChannel(garden.channel);
         espEeprom.putBool(nameEeprom.c_str(),garden.channel.state);
-        
+
         //Se desactivan los eventos relacionados al canal, por si hubiese alguno activado de manera que se deje trabajar en modo manual (Con los botones)
         //Desactivar los timers del canal lastCharChannel.toInt()
         //lockTimerCh(lastCharChannel.toInt());
         
-        printMsg("stateChannel"+lastCharChannel+": ", garden.channel.state);
+        //Se aplica el cambio
+        //digitalWrite(garden.ch[lastCharChannel.toInt()-1],valorBool);
+        garden.enableChannel(garden.channel);
+        
+        printMsg("stateChannel"+lastCharChannel+": ",  garden.enableChFlag[garden.channel.numberChannel-1]);
     
     }
 
@@ -484,7 +487,6 @@ void receiveBoolData(void){
                 garden.eventsChannel2[lastCharTimer.toInt()-1].state = valorBool;
                 //ruta = "Ch2Timer"+lastCharTimer+"State";
                 espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],valorBool);
-                //espEeprom.putBool(ruta.c_str(),valorBool);
               break;}
             case 3:{
                 garden.eventsChannel3[lastCharTimer.toInt()-1].state = valorBool;
@@ -499,6 +501,7 @@ void receiveBoolData(void){
           default:
             break;
         }
+
         printMsg("stateTimer"+lastCharTimer+": ", valorBool);
     }
 }
@@ -543,7 +546,7 @@ void getInfoTimerChanel(){
     jsStr = fbdoStreaming.jsonString();
     jsFb.setJsonData(jsStr);
 
-    Serial.println(jsStr);
+    //Serial.println(jsStr);
 
     //String ruta = "Ch1Timer" + lastCharTimer + "State"; //Se inicializa con una ruta cualquiera
 
@@ -551,67 +554,67 @@ void getInfoTimerChanel(){
         case 1:{
             jsFb.get(jsData,"/state");
             garden.eventsChannel1[lastCharTimer.toInt()-1].state = jsData.boolValue;
-            Serial.print("State: "); Serial.println(jsData.boolValue); 
+            //Serial.print("State: "); Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].state); 
             //ruta = "Ch1Timer" + lastCharTimer + "State";
             espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
             
             jsFb.get(jsData,"/action");
-            Serial.print("Action: ");Serial.println(jsData.boolValue);
             garden.eventsChannel1[lastCharTimer.toInt()-1].action = jsData.boolValue;
+            //Serial.print("Action: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].action);
             //ruta = "Ch1Timer" + lastCharTimer + "Action";
             espEeprom.putBool(actionChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/sun");
-            Serial.print("D: ");Serial.println(jsData.boolValue);
             garden.eventsChannel1[lastCharTimer.toInt()-1].sun = jsData.boolValue;
+            //Serial.print("D: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].sun);
             //ruta = "Ch1Timer" + lastCharTimer + "Sun";
             espEeprom.putBool(sunChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/mon");
-            Serial.print("L: ");Serial.println(jsData.boolValue);
             garden.eventsChannel1[lastCharTimer.toInt()-1].mon = jsData.boolValue;
+            //Serial.print("L: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].mon);
             //ruta = "Ch1Timer" + lastCharTimer + "Mon";
             espEeprom.putBool(monChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/tues");
-            Serial.print("M: ");Serial.println(jsData.boolValue);
             garden.eventsChannel1[lastCharTimer.toInt()-1].tues = jsData.boolValue;
+            //Serial.print("M: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].tues);
             //ruta = "Ch1Timer" + lastCharTimer + "Tues";
             espEeprom.putBool(tuesChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/wend");
-            Serial.print("W: ");Serial.println(jsData.boolValue);
             garden.eventsChannel1[lastCharTimer.toInt()-1].wend = jsData.boolValue;
+            //Serial.print("W: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].wend);
             //ruta = "Ch1Timer" + lastCharTimer + "Wend";
             espEeprom.putBool(wendChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/thurs");
-            Serial.print("J: ");Serial.println(jsData.boolValue);
             garden.eventsChannel1[lastCharTimer.toInt()-1].thurs = jsData.boolValue;
+            //Serial.print("J: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].thurs);
             //ruta = "Ch1Timer" + lastCharTimer + "Thurs";
             espEeprom.putBool(thursChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/fri");
-            Serial.print("V: ");Serial.println(jsData.boolValue);
             garden.eventsChannel1[lastCharTimer.toInt()-1].fri = jsData.boolValue;
+            //Serial.print("V: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].fri);
             //ruta = "Ch1Timer" + lastCharTimer + "Fri";
             espEeprom.putBool(friChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/satu");
-            Serial.print("S: ");Serial.println(jsData.boolValue);
             garden.eventsChannel1[lastCharTimer.toInt()-1].satu = jsData.boolValue;
+            Serial.print("S: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].satu);
             //ruta = "Ch1Timer" + lastCharTimer + "Satu";
             espEeprom.putBool(satuChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/hour");
-            Serial.print("Hora: ");Serial.println(jsData.intValue);
             garden.eventsChannel1[lastCharTimer.toInt()-1].hour = jsData.intValue; 
+            //Serial.print("Hora: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].hour);
             //ruta = "Ch1Timer" + lastCharTimer + "Hour";
             espEeprom.putInt(hourChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.intValue);
 
             jsFb.get(jsData,"/min");
-            Serial.print("min: ");Serial.println(jsData.intValue);
             garden.eventsChannel1[lastCharTimer.toInt()-1].min = jsData.intValue; 
+            //Serial.print("min: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].min);
             //ruta = "Ch1Timer" + lastCharTimer + "Min";
             espEeprom.putInt(minChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.intValue);
 
@@ -622,66 +625,66 @@ void getInfoTimerChanel(){
         case 2:{
             jsFb.get(jsData,"/state");
             garden.eventsChannel2[lastCharTimer.toInt()-1].state = jsData.boolValue;
-            Serial.print("State: "); Serial.println(jsData.boolValue); 
+            //Serial.print("State: "); Serial.println(jsData.boolValue); 
             //ruta = "Ch1Timer" + lastCharTimer + "State";
             espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
             
             jsFb.get(jsData,"/action");
-            Serial.print("Action: ");Serial.println(jsData.boolValue);
+            //Serial.print("Action: ");Serial.println(jsData.boolValue);
             garden.eventsChannel2[lastCharTimer.toInt()-1].action = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Action";
             espEeprom.putBool(actionChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/sun");
-            Serial.print("D: ");Serial.println(jsData.boolValue);
+            //Serial.print("D: ");Serial.println(jsData.boolValue);
             garden.eventsChannel2[lastCharTimer.toInt()-1].sun = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Sun";
             espEeprom.putBool(sunChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/mon");
-            Serial.print("L: ");Serial.println(jsData.boolValue);
+            //Serial.print("L: ");Serial.println(jsData.boolValue);
             garden.eventsChannel2[lastCharTimer.toInt()-1].mon = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Mon";
             espEeprom.putBool(monChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/tues");
-            Serial.print("M: ");Serial.println(jsData.boolValue);
+            //Serial.print("M: ");Serial.println(jsData.boolValue);
             garden.eventsChannel2[lastCharTimer.toInt()-1].tues = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Tues";
             espEeprom.putBool(tuesChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/wend");
-            Serial.print("W: ");Serial.println(jsData.boolValue);
+            //Serial.print("W: ");Serial.println(jsData.boolValue);
             garden.eventsChannel2[lastCharTimer.toInt()-1].wend = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Wend";
             espEeprom.putBool(wendChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/thurs");
-            Serial.print("J: ");Serial.println(jsData.boolValue);
+            //Serial.print("J: ");Serial.println(jsData.boolValue);
             garden.eventsChannel2[lastCharTimer.toInt()-1].thurs = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Thurs";
             espEeprom.putBool(thursChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/fri");
-            Serial.print("V: ");Serial.println(jsData.boolValue);
+            //Serial.print("V: ");Serial.println(jsData.boolValue);
             garden.eventsChannel2[lastCharTimer.toInt()-1].fri = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Fri";
             espEeprom.putBool(friChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/satu");
-            Serial.print("S: ");Serial.println(jsData.boolValue);
+            //Serial.print("S: ");Serial.println(jsData.boolValue);
             garden.eventsChannel2[lastCharTimer.toInt()-1].satu = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Satu";
             espEeprom.putBool(satuChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/hour");
-            Serial.print("Hora: ");Serial.println(jsData.intValue);
+            //Serial.print("Hora: ");Serial.println(jsData.intValue);
             garden.eventsChannel2[lastCharTimer.toInt()-1].hour = jsData.intValue; 
             //ruta = "Ch1Timer" + lastCharTimer + "Hour";
             espEeprom.putInt(hourChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.intValue);
 
             jsFb.get(jsData,"/min");
-            Serial.print("min: ");Serial.println(jsData.intValue);
+            //Serial.print("min: ");Serial.println(jsData.intValue);
             garden.eventsChannel2[lastCharTimer.toInt()-1].min = jsData.intValue; 
             //ruta = "Ch1Timer" + lastCharTimer + "Min";
             espEeprom.putInt(minChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.intValue);
@@ -693,66 +696,66 @@ void getInfoTimerChanel(){
         case 3:{
             jsFb.get(jsData,"/state");
             garden.eventsChannel3[lastCharTimer.toInt()-1].state = jsData.boolValue;
-            Serial.print("State: "); Serial.println(jsData.boolValue); 
+            //Serial.print("State: "); Serial.println(jsData.boolValue); 
             //ruta = "Ch1Timer" + lastCharTimer + "State";
             espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
             
             jsFb.get(jsData,"/action");
-            Serial.print("Action: ");Serial.println(jsData.boolValue);
+            //Serial.print("Action: ");Serial.println(jsData.boolValue);
             garden.eventsChannel3[lastCharTimer.toInt()-1].action = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Action";
             espEeprom.putBool(actionChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/sun");
-            Serial.print("D: ");Serial.println(jsData.boolValue);
+           // Serial.print("D: ");Serial.println(jsData.boolValue);
             garden.eventsChannel3[lastCharTimer.toInt()-1].sun = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Sun";
             espEeprom.putBool(sunChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/mon");
-            Serial.print("L: ");Serial.println(jsData.boolValue);
+            //Serial.print("L: ");Serial.println(jsData.boolValue);
             garden.eventsChannel3[lastCharTimer.toInt()-1].mon = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Mon";
             espEeprom.putBool(monChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/tues");
-            Serial.print("M: ");Serial.println(jsData.boolValue);
+            //Serial.print("M: ");Serial.println(jsData.boolValue);
             garden.eventsChannel3[lastCharTimer.toInt()-1].tues = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Tues";
             espEeprom.putBool(tuesChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/wend");
-            Serial.print("W: ");Serial.println(jsData.boolValue);
+            //Serial.print("W: ");Serial.println(jsData.boolValue);
             garden.eventsChannel3[lastCharTimer.toInt()-1].wend = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Wend";
             espEeprom.putBool(wendChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/thurs");
-            Serial.print("J: ");Serial.println(jsData.boolValue);
+            //Serial.print("J: ");Serial.println(jsData.boolValue);
             garden.eventsChannel3[lastCharTimer.toInt()-1].thurs = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Thurs";
             espEeprom.putBool(thursChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/fri");
-            Serial.print("V: ");Serial.println(jsData.boolValue);
+            //Serial.print("V: ");Serial.println(jsData.boolValue);
             garden.eventsChannel3[lastCharTimer.toInt()-1].fri = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Fri";
             espEeprom.putBool(friChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/satu");
-            Serial.print("S: ");Serial.println(jsData.boolValue);
+            //Serial.print("S: ");Serial.println(jsData.boolValue);
             garden.eventsChannel3[lastCharTimer.toInt()-1].satu = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Satu";
             espEeprom.putBool(satuChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/hour");
-            Serial.print("Hora: ");Serial.println(jsData.intValue);
+            //Serial.print("Hora: ");Serial.println(jsData.intValue);
             garden.eventsChannel3[lastCharTimer.toInt()-1].hour = jsData.intValue; 
             //ruta = "Ch1Timer" + lastCharTimer + "Hour";
             espEeprom.putInt(hourChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.intValue);
 
             jsFb.get(jsData,"/min");
-            Serial.print("min: ");Serial.println(jsData.intValue);
+            //Serial.print("min: ");Serial.println(jsData.intValue);
             garden.eventsChannel3[lastCharTimer.toInt()-1].min = jsData.intValue; 
             //ruta = "Ch1Timer" + lastCharTimer + "Min";
             espEeprom.putInt(minChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.intValue);
@@ -764,66 +767,66 @@ void getInfoTimerChanel(){
         case 4:{
             jsFb.get(jsData,"/state");
             garden.eventsChannel4[lastCharTimer.toInt()-1].state = jsData.boolValue;
-            Serial.print("State: "); Serial.println(jsData.boolValue); 
+            //Serial.print("State: "); Serial.println(jsData.boolValue); 
             //ruta = "Ch1Timer" + lastCharTimer + "State";
             espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
             
             jsFb.get(jsData,"/action");
-            Serial.print("Action: ");Serial.println(jsData.boolValue);
+            //Serial.print("Action: ");Serial.println(jsData.boolValue);
             garden.eventsChannel4[lastCharTimer.toInt()-1].action = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Action";
             espEeprom.putBool(actionChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/sun");
-            Serial.print("D: ");Serial.println(jsData.boolValue);
+            //Serial.print("D: ");Serial.println(jsData.boolValue);
             garden.eventsChannel4[lastCharTimer.toInt()-1].sun = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Sun";
             espEeprom.putBool(sunChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/mon");
-            Serial.print("L: ");Serial.println(jsData.boolValue);
+            //Serial.print("L: ");Serial.println(jsData.boolValue);
             garden.eventsChannel4[lastCharTimer.toInt()-1].mon = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Mon";
             espEeprom.putBool(monChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/tues");
-            Serial.print("M: ");Serial.println(jsData.boolValue);
+            //Serial.print("M: ");Serial.println(jsData.boolValue);
             garden.eventsChannel4[lastCharTimer.toInt()-1].tues = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Tues";
             espEeprom.putBool(tuesChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/wend");
-            Serial.print("W: ");Serial.println(jsData.boolValue);
+            //Serial.print("W: ");Serial.println(jsData.boolValue);
             garden.eventsChannel4[lastCharTimer.toInt()-1].wend = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Wend";
             espEeprom.putBool(wendChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/thurs");
-            Serial.print("J: ");Serial.println(jsData.boolValue);
+            //Serial.print("J: ");Serial.println(jsData.boolValue);
             garden.eventsChannel4[lastCharTimer.toInt()-1].thurs = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Thurs";
             espEeprom.putBool(thursChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/fri");
-            Serial.print("V: ");Serial.println(jsData.boolValue);
+            //Serial.print("V: ");Serial.println(jsData.boolValue);
             garden.eventsChannel4[lastCharTimer.toInt()-1].fri = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Fri";
             espEeprom.putBool(friChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/satu");
-            Serial.print("S: ");Serial.println(jsData.boolValue);
+            //Serial.print("S: ");Serial.println(jsData.boolValue);
             garden.eventsChannel4[lastCharTimer.toInt()-1].satu = jsData.boolValue;
             //ruta = "Ch1Timer" + lastCharTimer + "Satu";
             espEeprom.putBool(satuChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
             jsFb.get(jsData,"/hour");
-            Serial.print("Hora: ");Serial.println(jsData.intValue);
+            //Serial.print("Hora: ");Serial.println(jsData.intValue);
             garden.eventsChannel4[lastCharTimer.toInt()-1].hour = jsData.intValue; 
             //ruta = "Ch1Timer" + lastCharTimer + "Hour";
             espEeprom.putInt(hourChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.intValue);
 
             jsFb.get(jsData,"/min");
-            Serial.print("min: ");Serial.println(jsData.intValue);
+            //Serial.print("min: ");Serial.println(jsData.intValue);
             garden.eventsChannel4[lastCharTimer.toInt()-1].min = jsData.intValue; 
             //ruta = "Ch1Timer" + lastCharTimer + "Min";
             espEeprom.putInt(minChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.intValue);

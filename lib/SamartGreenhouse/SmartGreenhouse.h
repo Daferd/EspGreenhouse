@@ -61,13 +61,13 @@ public:
 
     void  enableChannel(ChannelServer channel);
     void enableInvChannel(ChannelServer channel);
-    bool stateDefine(int chn, Event events[],bool courrentState);
+    bool stateDefine(int chn, Event events[],bool currentState);
     float readDigitalSensor(uint8_t sensorPin);
     bool dhtInit(uint8_t dhtPin);
     float readDhtTemperature();
     float readDhtHumidity();
     void printEventTimes(Event events[], int size);
-    bool timerAction(Event eventAux, bool stateCourrent);
+    bool timerAction(Event eventAux, bool stateCurrent);
     void sortEventsByTime(Event events[], int size);
     void swapEvents(Event &event1, Event &event2);
     

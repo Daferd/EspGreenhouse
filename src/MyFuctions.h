@@ -313,7 +313,7 @@ void testHwm(char * taskName){
 bool InitWiFi(String SSID, String PASS){  
 
     bool state=false;    
-    boolean bandStateWifi = false;
+    //boolean bandStateWifi = false;
     unsigned char tamano1= SSID.length();
     char nombreRed[tamano1];
 
@@ -444,7 +444,7 @@ void receiveJsonData(void){
 }
 
 void receiveBoolData(void){
-    String ruta = "Ch1Timer"+lastCharTimer+"State";
+    //String ruta = "Ch1Timer"+lastCharTimer+"State";
     boolean valorBool = fbdoStreaming.boolData();
     String namePath = fbdoStreaming.dataPath();
     

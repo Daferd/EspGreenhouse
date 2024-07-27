@@ -32,8 +32,8 @@ void SmartGreenhouse::enableChannel(ChannelServer channel){
     digitalWrite(ch[channel.numberChannel-1],channel.state);
 }
 
-bool SmartGreenhouse::timerAction(Event eventAux, bool stateCourrent){
-  bool enableAction=stateCourrent; 
+bool SmartGreenhouse::timerAction(Event eventAux, bool stateCurrent){
+  bool enableAction=stateCurrent; 
   bool listDays[]={false,false,false,false,false,false,false};
   
   listDays[0] = eventAux.sun;
@@ -48,27 +48,21 @@ bool SmartGreenhouse::timerAction(Event eventAux, bool stateCourrent){
       if(rtc.getHour(true) == eventAux.hour){
         if(rtc.getMinute() >= eventAux.min){
             enableAction = eventAux.action; 
-        }/*else {
-            enableAction = false;
-        }*/
+        }
       }else if(rtc.getHour(true) > eventAux.hour){
         enableAction = eventAux.action;
-      }/*else{
-        enableAction = false;
-      }*/
+      }
   }
   return enableAction;
 }
 
-bool SmartGreenhouse::stateDefine(int chn, Event events[],bool courrentState){
-    bool stateDef = courrentState;
+bool SmartGreenhouse::stateDefine(int chn, Event events[],bool currentState){
+    bool stateDef = currentState;
 
     for (int i = 0; i < 4; i++) {
         if (events[i].state){                              
             stateDef = timerAction(events[i],stateDef);
-        }/*else{
-            return stateDef;
-        }*/
+        }
     }
     return stateDef;
 }

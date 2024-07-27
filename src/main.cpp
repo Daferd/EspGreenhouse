@@ -196,8 +196,6 @@ void loop() {
                     
                     //readSensors();
 
-                    
-                    
                     uint8_t ch =1;
                     garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
                     

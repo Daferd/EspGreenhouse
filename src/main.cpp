@@ -65,6 +65,8 @@ void setup() {
 
 void loop() {
 
+    
+
     if (modeConfigBT){
 
         //Se apaga todos los canales por control (Se podria definir diferente)
@@ -186,6 +188,10 @@ void loop() {
               
         }else{
             if (WiFi.status() == WL_CONNECTED){
+
+                app.loop();
+
+                Database.loop();
                  
                 if (rtc.getSecond()==0 && flagShedulesStart==true){
                     flagShedulesStart = false;
@@ -196,13 +202,13 @@ void loop() {
                     
                     //readSensors();
 
-                    uint8_t ch =1;
+                    uint8_t ch = 1;
                     garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
                     
-                    ch =2;
+                    ch = 2;
                     garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel2,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
                     
-                    ch =3;
+                    ch = 3;
                     garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
                     
                     ch = 4;
@@ -210,22 +216,21 @@ void loop() {
                     
                     //Se actualiza la base de datos, se aplica el cambio y se imprime en pantalla
                     for (uint8_t ch = 1; ch <= CHANNELS_TOTAL; ch++){
-                      Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
-                      
-                      garden.channel.numberChannel = ch;
-                      garden.channel.state = garden.enableChFlag[ch-1];
-                      garden.enableChannel(garden.channel);
-                      
-                      printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
-                      //delay(10);
+                        //Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
+                        
+                        garden.channel.numberChannel = ch;
+                        garden.channel.state = garden.enableChFlag[ch-1];
+                        garden.enableChannel(garden.channel);
+                        
+                        printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
+                        //delay(10);
                     }
-                    
                     
                 }
                 
                 if(rtc.getSecond()==30) flagShedulesStart = true;
 
-                    
+
                 //if (millis() - tiempoComp >= SENSOR_READ_TIME_MS) readSensors();
                   
             }else{
@@ -243,14 +248,14 @@ void readSensors(void){
   float temperatureDHT = random(25,40);
   //float  temperatureDHT = dht.readTemperature();
   printMsg("TemperaturaDHT: ", temperatureDHT);
-  Firebase.set(fbdo, userPath + "/sensors/0",temperatureDHT);
-  delay(10);
+  //Firebase.set(fbdo, userPath + "/sensors/0",temperatureDHT);
+  //delay(10);
 
   float humidityDHT = random(25,40);
-  Firebase.set(fbdo, userPath+"/sensors/1",humidityDHT);
-  delay(10);
+  //Firebase.set(fbdo, userPath+"/sensors/1",humidityDHT);
+  //delay(10);
 
   tempLm35 = readLm35();
-  Firebase.set(fbdo, userPath+"/sensors/3",int(tempLm35));
-  delay(10);
+  //Firebase.set(fbdo, userPath+"/sensors/3",int(tempLm35));
+  //delay(10);
 }

@@ -3,21 +3,16 @@
 
 #include <Arduino.h>
 #include <SmartGreenhouse.h>
-#include <FirebaseESP32.h>  // Para la comunicación con Firebase
+#include <FirebaseClient.h>
+#include <FirebaseJson.h>
 #include <Wire.h>           // Para la comunicación I2C con los sensores
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <Adafruit_Sensor.h>
 #include "DHT.h"         // Para el sensor de temperatura y humedad DHT
 #include <BluetoothSerial.h>
 #include <NTPClient.h>
 #include <Preferences.h>
-//#include <Adafruit_ADS1015.h> // Para los sensores analógicos
-
-// Provide the token generation process info.
-#include <addons/TokenHelper.h>
-
-// Provide the RTDB payload printing info and other helper functions.
-#include <addons/RTDBHelper.h>
 
 #define CHANNELS_TOTAL 4
 #define TIMERS_TOTAL 4
@@ -171,8 +166,6 @@ DHT dht(DHT_PIN, DHT22);
 
 float tempLm35 = 1; // Variable para almacenar la temperatura en grados Celsius
 
-
-
 String USER_PATH = "/users/2k147bi5U8WDFrt3OWHOc0KMg7D3";
 
 //Variable y Estructuras para el control del Timer
@@ -186,14 +179,24 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
 ESP32Time rtc(0);
 
-FirebaseAuth auth;
-FirebaseConfig config;
+DefaultNetwork network; // initilize with boolean parameter to enable/disable network reconnection
+
+UserAuth user_auth(API_KEY, USER_EMAIL, USER_PASSWORD);
+
+FirebaseApp app;
 
 // Define Firebase Data object
-FirebaseData fbdo,fbdoStreaming;
-FirebaseJson jsFb;
-FirebaseJsonData jsData;
+//FirebaseJson jsFb;
+//FirebaseJsonData jsData;
 String jsStr;
+
+WiFiClientSecure ssl_client1, ssl_client2;
+
+using AsyncClient = AsyncClientClass;
+
+AsyncClient aClient(ssl_client1, getNetwork(network)), aClient2(ssl_client2, getNetwork(network));
+
+RealtimeDatabase Database;
 
 SmartGreenhouse garden;
 
@@ -211,8 +214,8 @@ bool buttonState = false;
 int analogSensorValues[NUM_ANALOG_SENSORS];
 bool digitalOutputs[NUM_DIGITAL_OUTPUTS];
 
-String lastCharTimer = "";
-String lastCharChannel = "";
+//String lastCharTimer = "";
+//String lastCharChannel = "";
 
 struct channel{
   uint8_t pin = 1;
@@ -229,27 +232,23 @@ bool flagShedulesStart = true;
 bool flagTimerCh1 = false;
 hw_timer_t *timer1 = NULL; // Apuntador a variable de tipo hw_timer_t que luego usaremos en la función de configuración de Arduino.
 
-
-
-
 // Prototipos de funciones
 void readSensorsTask(void *pvParameters);
 void controlOutputsTask(void *pvParameters);
 
-
 void testHwm(char * taskName);
 bool InitWiFi(String SSID, String PASS);
 bool initFirebase(String email, String pass, String path);
-void firebaseCallback(StreamData data);
-void timeoutCallback(bool timeCallback);
-void receiveJsonData(void);
-void receiveBoolData(void);
+void asyncCB(AsyncResult &aResult);
+void printResult(AsyncResult &aResult);
+void receiveJsonData(String jsStr, String currentPath);
+void receiveBoolData(bool boolValue, String currentPath);
 void lockTimerCh(uint8_t);
 
 void printMsg(String label,int val);
 void ledBlinkMillis(unsigned int velocidad);
 void updateTime();
-void getInfoTimerChanel();
+void getInfoTimerChanel(String lastCharChannel,String lastCharTimer, String jsStr);
 float readLm35();
 void loadEeprom();
 void CausaError(void);
@@ -268,11 +267,11 @@ void readSensorsTask(void *pvParameters) {
     
     float temperatureDHT = random(25,40);
     printMsg("Temperatura: ", temperatureDHT);
-    Firebase.set(fbdo, userPath + "/sensors/0",temperatureDHT);
+    //Firebase.set(fbdo, userPath + "/sensors/0",temperatureDHT);
     vTaskDelay(pdMS_TO_TICKS(1000));
     //float humidityDHT = dht.readHumidity();
     float humidityDHT = random(25,40);
-    Firebase.set(fbdo, userPath +"/sensors/1",humidityDHT);
+    //Firebase.set(fbdo, userPath +"/sensors/1",humidityDHT);
     testHwm("ReadSensorsTask");
     vTaskDelay(pdMS_TO_TICKS(30000));
   }
@@ -377,85 +376,148 @@ bool InitWiFi(String SSID, String PASS){
 bool initFirebase(String email, String pass, String path){
 
       bool confirm = false;
-    /* Assign the api key (required) */
-      config.api_key = API_KEY;
+      Firebase.printf("Firebase Client v%s\n", FIREBASE_CLIENT_VERSION);
+      Serial.println("Initializing app...");
 
-      /* Assign the user sign in credentials */
-      auth.user.email = email; 
-      auth.user.password = pass; 
 
-      /* Assign the RTDB URL (required) */
-      config.database_url = DATABASE_URL;
-      // Inicializar Firebase
-      /* Assign the callback function for the long running token generation task */
-      config.token_status_callback = tokenStatusCallback; // see addons/TokenHelper.h
+    // with minimum receive and transmit buffer size setting as following.
+    // ssl_client1.setBufferSizes(1024, 512);
+    // ssl_client2.setBufferSizes(1024, 512);
+    // Note that, because the receive buffer size was set to minimum safe value, 1024, the large server response may not be able to handle.
+    // The WiFiClientSecure uses 1k less memory than ESP_SSLClient.
 
-      Firebase.reconnectWiFi(true);
-      Firebase.setDoubleDigits(5);     
+    ssl_client1.setInsecure();
+    ssl_client2.setInsecure();
+      
+    initializeApp(aClient2, app, getAuth(user_auth), asyncCB, "authTask");
+    // Binding the FirebaseApp for authentication handler.
+    // To unbind, use Database.resetApp();
+    app.getApp<RealtimeDatabase>(Database);
 
-      // required for large file data, increase Rx size as needed.
-      fbdo.setBSSLBufferSize(4096 /* Rx buffer size in bytes from 512 - 16384 */, 1024 /* Tx buffer size in bytes from 512 - 16384 */);
+    Database.url(DATABASE_URL);
 
-      // Inicializamos Firebase, mediante el URL y secreto de la base de datos del proyecto en Firebase.
-      //Firebase.begin(DB_URL, SECRET_KEY);
-      Firebase.begin(&config, &auth);
+    // Since v1.2.1, in SSE mode (HTTP Streaming) task, you can filter the Stream events by using RealtimeDatabase::setSSEFilters(<keywords>),
+    // which the <keywords> is the comma separated events.
+    // The event keywords supported are:
+    // get - To allow the http get response (first put event since stream connected).
+    // put - To allow the put event.
+    // patch - To allow the patch event.
+    // keep-alive - To allow the keep-alive event.
+    // cancel - To allow the cancel event.
+    // auth_revoked - To allow the auth_revoked event.
+    // To clear all prevousely set filter to allow all Stream events, use RealtimeDatabase::setSSEFilters().
+    Database.setSSEFilters("get,put,patch,keep-alive,cancel,auth_revoked");
 
-      fbdo.keepAlive(5, 5, 1);
-                  
-      if(!Firebase.beginStream(fbdoStreaming, path)){   
-          confirm = false;
-          Serial.println("...No se establecio StreamCalback con el PATH: ");Serial.println(path);
-      }else{
-          Firebase.setStreamCallback(fbdoStreaming, firebaseCallback, timeoutCallback);
-          Serial.println("...Se establecio StreamCalback con el PATH: ");Serial.println(path);
-          confirm = true;
-      }
+    // The "unauthenticate" error can be occurred in this case because we don't wait
+    // the app to be authenticated before connecting the stream.
+    // This is ok as stream task will be reconnected automatically when the app is authenticated.
+    Database.get(aClient, "/users/2k147bi5U8WDFrt3OWHOc0KMg7D3", asyncCB, true /* SSE mode (HTTP Streaming) */, "streamTask");
 
       return confirm;
 }
 
-void firebaseCallback(StreamData data){
-    digitalWrite(LED_ESP,LOW); //Apagado indica que llego mensaje
-    
-    //String namePath = "";
+void asyncCB(AsyncResult &aResult){
+    // WARNING!
+    // Do not put your codes inside the callback and printResult.
     Serial.println("Cambios en la base de datos");
-    Serial.println(data.dataType());            // Que tipo de dato esta llegando
 
-    if(data.dataType().equals("json"))      receiveJsonData();
-    if(data.dataType().equals("boolean"))   receiveBoolData();
-    
-    digitalWrite(LED_ESP,HIGH); //Encendido indica que se termino la recepción del msj
+    printResult(aResult);
 }
 
-void receiveJsonData(void){
-    String namePath = fbdoStreaming.dataPath();
-    lastCharChannel = namePath.substring(17,18);  //18 posicion en el paht del canal
-    lastCharTimer = namePath.substring(namePath.length() - 1);
+void printResult(AsyncResult &aResult){
 
-    Serial.println(namePath);
-    //Serial.print("ultima: ");
-    //Serial.println(lastCharChannel);
+    if (aResult.isEvent()){
+        Firebase.printf("Event task: %s, msg: %s, code: %d\n", aResult.uid().c_str(), aResult.appEvent().message().c_str(), aResult.appEvent().code());
+    }
 
+    if (aResult.isDebug()){
+        Firebase.printf("Debug task: %s, msg: %s\n", aResult.uid().c_str(), aResult.debug().c_str());
+    }
 
-    if(namePath.equals("/channels/channel"+lastCharChannel+"/timers/timer"+lastCharTimer)){
-    //if(namePath.equals("/timers/enableTimersLum")){
-        getInfoTimerChanel();
+    if (aResult.isError()){
+        Firebase.printf("Error task: %s, msg: %s, code: %d\n", aResult.uid().c_str(), aResult.error().message().c_str(), aResult.error().code());
+    }
+
+    if (aResult.available()) {
+        RealtimeDatabaseResult &RTDB = aResult.to<RealtimeDatabaseResult>();
+        if (RTDB.isStream()){
+
+            Serial.println("----------------------------");
+            Firebase.printf("task: %s\n", aResult.uid().c_str());
+            Firebase.printf("event: %s\n", RTDB.event().c_str());
+            Firebase.printf("path: %s\n", RTDB.dataPath().c_str());
+            Firebase.printf("data: %s\n", RTDB.to<const char *>());
+            Firebase.printf("type: %d\n", RTDB.type());
+
+            // The stream event from RealtimeDatabaseResult can be converted to the values as following.
+            //bool v1 = RTDB.to<bool>();
+            //int   v2 = RTDB.to<int>();
+            //float v3 = RTDB.to<float>();
+            //double v4 = RTDB.to<double>();
+
+            switch (RTDB.type()){
+                case 4:{  //BOOL
+                    receiveBoolData(RTDB.to<bool>(),String(RTDB.dataPath()));
+                    
+
+                break;}
+                case 6:{  //JSON
+                    //receiveBoolData();
+                    jsStr = RTDB.to<String>();
+                    
+
+                    //String currenPath = String(RTDB.dataPath());
+
+                    receiveJsonData(jsStr,String(RTDB.dataPath()));
+
+                    //String lastCharChannel = namePath.substring(17,18);  //18 posicion en el paht del canal
+                    //String lastCharTimer = namePath.substring(namePath.length() - 1);
+                break;}
+                
+                default:
+                  break;
+            }
+            
+            
+        }
+        else
+        {
+            Serial.println("----------------------------");
+            Firebase.printf("task: %s, payload: %s\n", aResult.uid().c_str(), aResult.c_str());
+        }
+
+        #if defined(ESP32) || defined(ESP8266)
+                Firebase.printf("Free Heap: %d\n", ESP.getFreeHeap());
+        #elif defined(ARDUINO_RASPBERRY_PI_PICO_W)
+                Firebase.printf("Free Heap: %d\n", rp2040.getFreeHeap());
+        #endif
     }
 }
 
-void receiveBoolData(void){
-    //String ruta = "Ch1Timer"+lastCharTimer+"State";
-    boolean valorBool = fbdoStreaming.boolData();
-    String namePath = fbdoStreaming.dataPath();
+void receiveJsonData(String jsStr, String currentPath){
     
-    lastCharChannel = namePath.substring(17,18);  ////se recupera el texto correspondiente al numero del timer , ejemplo: "2", el valor 30 corresponde a la posición del numero del timer en el PATH
-    lastCharTimer = namePath.substring(31,32);
+    String lastCharChannel = currentPath.substring(17,18);  //18 posicion en el paht del canal
+    String lastCharTimer = currentPath.substring(currentPath.length() - 1);
+
+
+    Serial.println(currentPath);
     
-    //REVISAR SI ES NECESARIO 03/04/2024
-    if(namePath.equals("/channels/channel"+lastCharChannel+"/state")){  //Con la ultima letra del namePath se define cual fue el canal que se modifico
+
+    if(currentPath.equals("/channels/channel"+lastCharChannel+"/timers/timer"+lastCharTimer)){
+        
+        getInfoTimerChanel(lastCharChannel,lastCharTimer,jsStr);
+        printMsg("Horariooooooooo CH"+lastCharTimer+": ",  200);
+    }
+}
+
+void receiveBoolData(bool boolValue, String currentPath){
+    String lastCharChannel = currentPath.substring(17,18);  ////se recupera el texto correspondiente al numero del timer , ejemplo: "2", el valor 30 corresponde a la posición del numero del timer en el PATH
+    String lastCharTimer = currentPath.substring(31,32);
+
+    if(currentPath.equals("/channels/channel"+lastCharChannel+"/state")){  //Con la ultima letra del namePath se define cual fue el canal que se modifico
        
         //Se recibe la data modificada eb FB
-        garden.channel.state=valorBool;
+        garden.channel.state=boolValue;
         garden.channel.numberChannel=lastCharChannel.toInt();
 
         //Se guarda en un arreglo que contiene los estados de cada canal y en la Eeprom 
@@ -469,40 +531,43 @@ void receiveBoolData(void){
         //lockTimerCh(lastCharChannel.toInt());
         
         //Se aplica el cambio
-        //digitalWrite(garden.ch[lastCharChannel.toInt()-1],valorBool);
+        //digitalWrite(garden.ch[lastCharChannel.toInt()-1],boolValue);
         garden.enableChannel(garden.channel);
         
         printMsg("stateChannel"+lastCharChannel+": ",  garden.enableChFlag[garden.channel.numberChannel-1]);
+        
+        //printMsg("stateChannelllllllllllll"+lastCharChannel+": ",  boolValue);
     
     }
 
-    if(namePath.equals("/channels/channel"+lastCharChannel+"/timers/timer"+lastCharTimer+"/state")){  //Se vigila si se activa o se desactiva el timer
+    if(currentPath.equals("/channels/channel"+lastCharChannel+"/timers/timer"+lastCharTimer+"/state")){  //Se vigila si se activa o se desactiva el timer
+        
         switch (lastCharChannel.toInt()){
             case 1:{
-                garden.eventsChannel1[lastCharTimer.toInt()-1].state = valorBool;
+                garden.eventsChannel1[lastCharTimer.toInt()-1].state = boolValue;
                 //ruta = "Ch1Timer"+lastCharTimer+"State";
-                espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],valorBool);
+                espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],boolValue);
               break;}
             case 2:{
-                garden.eventsChannel2[lastCharTimer.toInt()-1].state = valorBool;
+                garden.eventsChannel2[lastCharTimer.toInt()-1].state = boolValue;
                 //ruta = "Ch2Timer"+lastCharTimer+"State";
-                espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],valorBool);
+                espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],boolValue);
               break;}
             case 3:{
-                garden.eventsChannel3[lastCharTimer.toInt()-1].state = valorBool;
+                garden.eventsChannel3[lastCharTimer.toInt()-1].state = boolValue;
                 //ruta = "Ch1Timer"+lastCharTimer+"State";
-                espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],valorBool);
+                espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],boolValue);
               break;}
             case 4:{
-                garden.eventsChannel4[lastCharTimer.toInt()-1].state = valorBool;
+                garden.eventsChannel4[lastCharTimer.toInt()-1].state = boolValue;
                 //ruta = "Ch1Timer"+lastCharTimer+"State";
-                espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],valorBool);
+                espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],boolValue);
               break;}
           default:
             break;
         }
-
-        printMsg("stateTimer"+lastCharTimer+": ", valorBool);
+        
+        printMsg("stateTimerrrrrrrrrrr"+lastCharTimer+": ", boolValue);
     }
 }
 
@@ -540,15 +605,12 @@ void lockTimerCh(uint8_t ch){
     }
 }
 
-void getInfoTimerChanel(){
+void getInfoTimerChanel(String lastCharChannel,String lastCharTimer, String jsStr){
 
-    Firebase.get(fbdoStreaming, "/users/"+uidUserFire+"/channels/channel"+lastCharChannel+"/timers/timer"+lastCharTimer);
-    jsStr = fbdoStreaming.jsonString();
+    FirebaseJsonData jsData;
+    FirebaseJson jsFb;
+
     jsFb.setJsonData(jsStr);
-
-    //Serial.println(jsStr);
-
-    //String ruta = "Ch1Timer" + lastCharTimer + "State"; //Se inicializa con una ruta cualquiera
 
     switch (lastCharChannel.toInt()){
         case 1:{
@@ -602,7 +664,7 @@ void getInfoTimerChanel(){
 
             jsFb.get(jsData,"/satu");
             garden.eventsChannel1[lastCharTimer.toInt()-1].satu = jsData.boolValue;
-            Serial.print("S: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].satu);
+            //Serial.print("S: ");Serial.println(garden.eventsChannel1[lastCharTimer.toInt()-1].satu);
             //ruta = "Ch1Timer" + lastCharTimer + "Satu";
             espEeprom.putBool(satuChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],jsData.boolValue);
 
@@ -845,13 +907,6 @@ void printMsg(String label,int val){
   Serial.print(label); Serial.println(val);
 }
 
-void timeoutCallback(bool timeCallback){
-  if (timeCallback)
-    Serial.println("stream timed out, resuming...\n");
-
-  if (!fbdo.httpConnected())
-    Serial.printf("error code: %d, reason: %s\n\n", fbdo.httpCode(), fbdo.errorReason().c_str());
-}
 
 void ledBlinkMillis(unsigned int velocidad){
   tiempoActual = millis();
@@ -1068,12 +1123,5 @@ void loadEeprom(){
     
 }
 
-void CausaError(void){
-  Serial.println("FAILED");
-  Serial.println("REASON: " + fbdoStreaming.errorReason());
-  Serial.println("------------------------------------");
-  Serial.println();
-  
-}
 
 #endif //_MYFUCTIONS_H

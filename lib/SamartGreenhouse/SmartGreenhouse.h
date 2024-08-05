@@ -3,8 +3,6 @@
 
 #include <Arduino.h>
 #include <ESP32Time.h>
-#include <FirebaseESP32.h>  // Para la comunicación con Firebase
-
 
 
 class SmartGreenhouse {

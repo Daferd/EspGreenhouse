@@ -19,19 +19,19 @@ void setup() {
   pinMode(garden.CH2, OUTPUT);
   pinMode(garden.CH3, OUTPUT);
   pinMode(garden.CH4, OUTPUT);
-  pinMode(garden.CH5, OUTPUT);
-  pinMode(garden.CH6, OUTPUT);
-  pinMode(garden.CH7, OUTPUT);
-  pinMode(garden.CH8, OUTPUT);
+  //pinMode(garden.CH5, OUTPUT);
+  //pinMode(garden.CH6, OUTPUT);
+  //pinMode(garden.CH7, OUTPUT);
+  //pinMode(garden.CH8, OUTPUT);
 
   digitalWrite(garden.CH1,LOW);
   digitalWrite(garden.CH2,LOW);
   digitalWrite(garden.CH3,LOW);
   digitalWrite(garden.CH4,LOW);
-  digitalWrite(garden.CH5,LOW);
-  digitalWrite(garden.CH6,LOW);
+  //digitalWrite(garden.CH5,LOW);
+  //digitalWrite(garden.CH6,LOW);
   //digitalWrite(garden.CH7,!LOW);
-  digitalWrite(garden.CH8,LOW);
+  //digitalWrite(garden.CH8,LOW);
 
   //unsigned char delayEprom = 100;
   loadEeprom();
@@ -209,10 +209,10 @@ void loop() {
                     garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel2,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
                     
                     ch = 3;
-                    garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
+                    garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel3,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
                     
                     ch = 4;
-                    garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel1,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
+                    garden.enableChFlag[ch-1] = garden.stateDefine(ch,garden.eventsChannel4,garden.enableChFlag[ch-1]);  // la funcion stateDefine solo modifica al canal 1, se debe cambia REBISAR!!
                     
                     //Se actualiza la base de datos, se aplica el cambio y se imprime en pantalla
                     for (uint8_t ch = 1; ch <= CHANNELS_TOTAL; ch++){
@@ -221,18 +221,21 @@ void loop() {
                         garden.channel.numberChannel = ch;
                         garden.channel.state = garden.enableChFlag[ch-1];
                         garden.enableChannel(garden.channel);
+                        String nameEeprom = "Ch"+String(ch)+"State";
+                        espEeprom.putBool(nameEeprom.c_str(),garden.channel.state);
+
+                        // Set bool
+                        Database.set<bool>(aClient, userPath + "/channels/channel"+String(ch)+"/state", garden.enableChFlag[ch-1], asyncCB, "setBoolTask");
                         
                         printMsg("ESTADO CANAL "+String(ch)+": ", garden.enableChFlag[ch-1]);
-                        //delay(10);
+                        delay(500);
                     }
                     
                 }
                 
                 if(rtc.getSecond()==30) flagShedulesStart = true;
 
-
                 //if (millis() - tiempoComp >= SENSOR_READ_TIME_MS) readSensors();
-                  
             }else{
                 Serial.println("SE PERDIO LA CONEXION!!");
                 contIntentos = 0;

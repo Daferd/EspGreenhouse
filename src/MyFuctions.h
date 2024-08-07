@@ -149,8 +149,8 @@ volatile bool modeConfigBT = false;
 bool modeConfigFire = true;
 //bool modoConfigUID = true;
 bool bandUID = true;
-String ssidWifi="REDGOINN";  //"JuanD",   REDGOINN,         Inverna/ESCOBAR_ME        Moto_AH    
-String passWifi="900791927G";  //"Cata1979",  900791927G             wiracocha          12345678
+String ssidWifi="MILO";  //"JuanD",   REDGOINN,         Inverna/ESCOBAR_ME        Moto_AH    
+String passWifi="MILOVALERO17";  //"Cata1979",  900791927G             wiracocha          12345678
 //String userID="";
 String uidUserFire="2k147bi5U8WDFrt3OWHOc0KMg7D3";  //2k147bi5U8WDFrt3OWHOc0KMg7D3   mSeD55cmDSeuSRx9T8yceAehvpA2
 
@@ -224,7 +224,7 @@ struct channel{
 
 String userPath = "/users/"+uidUserFire;
 
-#define HOME         1
+#define HOME  1
 //VARIABLES PARA EL CONTROL MAQUINA DE ESTADOS PRINCIPAL
 unsigned char state = HOME;  //HOME
 
@@ -547,6 +547,7 @@ void receiveBoolData(bool boolValue, String currentPath){
                 garden.eventsChannel1[lastCharTimer.toInt()-1].state = boolValue;
                 //ruta = "Ch1Timer"+lastCharTimer+"State";
                 espEeprom.putBool(stateChLabels[lastCharChannel.toInt()-1][lastCharTimer.toInt()-1],boolValue);
+                
               break;}
             case 2:{
                 garden.eventsChannel2[lastCharTimer.toInt()-1].state = boolValue;
@@ -566,8 +567,10 @@ void receiveBoolData(bool boolValue, String currentPath){
           default:
             break;
         }
+
+        printMsg("stateTimer"+lastCharTimer+": ", boolValue);
         
-        printMsg("stateTimerrrrrrrrrrr"+lastCharTimer+": ", boolValue);
+        
     }
 }
 

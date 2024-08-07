@@ -217,7 +217,7 @@ void loop() {
                     //Se actualiza la base de datos, se aplica el cambio y se imprime en pantalla
                     for (uint8_t ch = 1; ch <= CHANNELS_TOTAL; ch++){
                         //Firebase.set(fbdo, userPath + "/channels/channel"+String(ch)+"/state",garden.enableChFlag[ch-1]);
-                        
+                        ///
                         garden.channel.numberChannel = ch;
                         garden.channel.state = garden.enableChFlag[ch-1];
                         garden.enableChannel(garden.channel);
